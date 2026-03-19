@@ -1,0 +1,164 @@
+{
+  "brand_identity": {
+    "name": "MediVision",
+    "tagline": "AI-Powered Precision. Human Care.",
+    "description": "A professional multi-disease prediction and analytics platform blending clinical accuracy with modern AI.",
+    "emotional_archetype": "The Modern Clinic (Trust, Clarity, Precision)",
+    "design_personality": "Clean, Sterile (in a good way), Intelligent, Empathetic",
+    "theme_mode": "light"
+  },
+  "typography": {
+    "font_family": {
+      "headings": {
+        "name": "Manrope",
+        "class": "font-heading",
+        "cdn_url": "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap",
+        "usage": "Use for all H1-H6, Hero text, and metric numbers. Weights: 600/700 for emphasis, 400 for elegance."
+      },
+      "body": {
+        "name": "Public Sans",
+        "class": "font-body",
+        "cdn_url": "https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&display=swap",
+        "usage": "Use for paragraphs, UI labels, buttons, and inputs. Excellent legibility for data."
+      }
+    },
+    "scale_rules": {
+      "h1": "text-5xl md:text-6xl font-bold tracking-tight leading-[1.1]",
+      "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-normal",
+      "p_lead": "text-xl text-muted-foreground leading-relaxed",
+      "p_body": "text-base text-foreground/80 leading-7",
+      "label": "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+      "data_metric": "text-4xl font-bold tracking-tight font-heading"
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#0284C7",
+        "foreground": "#FFFFFF",
+        "description": "Medical Blue (Sky 600) - Trust, Technology, Clarity. Use for primary actions, active states."
+      },
+      "secondary": {
+        "DEFAULT": "#F1F5F9",
+        "foreground": "#0F172A",
+        "description": "Slate 100 - Clinical background, secondary buttons. Soft and neutral."
+      },
+      "accent": {
+        "DEFAULT": "#0F172A",
+        "foreground": "#FFFFFF",
+        "description": "Slate 900 - Deep Obsidian. Use for heavy contrast, footer, major headings."
+      },
+      "success": {
+        "DEFAULT": "#10B981",
+        "foreground": "#FFFFFF",
+        "description": "Emerald 500 - Healthy results, positive trends."
+      },
+      "warning": {
+        "DEFAULT": "#F59E0B",
+        "foreground": "#FFFFFF",
+        "description": "Amber 500 - Moderate risk, alerts."
+      },
+      "destructive": {
+        "DEFAULT": "#EF4444",
+        "foreground": "#FFFFFF",
+        "description": "Red 500 - High risk, critical errors."
+      },
+      "background": "#FFFFFF",
+      "surface": "#F8FAFC",
+      "border": "#E2E8F0"
+    },
+    "gradients": {
+      "hero_overlay": "bg-gradient-to-br from-blue-50/50 to-white/0",
+      "subtle_glow": "bg-gradient-to-r from-sky-500/10 to-teal-500/10"
+    },
+    "rules": [
+      "No full-screen gradients. Use subtle white/grey washes.",
+      "Text on colored backgrounds must be white.",
+      "Input fields should have a white background with a Slate-200 border."
+    ]
+  },
+  "visual_enhancers": {
+    "radius": {
+      "default": "rounded-xl",
+      "sm": "rounded-lg",
+      "lg": "rounded-2xl",
+      "pill": "rounded-full"
+    },
+    "shadows": {
+      "card": "shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300",
+      "float": "shadow-[0_12px_32px_rgba(0,0,0,0.1)]",
+      "inner": "shadow-inner"
+    },
+    "glassmorphism": {
+      "overlay": "bg-white/80 backdrop-blur-md border border-white/20",
+      "panel": "bg-white/60 backdrop-blur-xl border border-slate-200/50"
+    },
+    "micro_interactions": {
+      "button_hover": "transform hover:-translate-y-0.5 transition-transform duration-200",
+      "card_hover": "hover:border-sky-500/30 transition-colors duration-300"
+    }
+  },
+  "layout_strategy": {
+    "spacing": {
+      "section_y": "py-24 md:py-32",
+      "section_gap": "gap-12 md:gap-20",
+      "card_padding": "p-8",
+      "container_padding": "px-6 md:px-12"
+    },
+    "grids": {
+      "landing_features": "grid grid-cols-1 md:grid-cols-12 gap-8 auto-rows-[minmax(300px,auto)]",
+      "dashboard_metrics": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6",
+      "dashboard_main": "grid grid-cols-1 lg:grid-cols-12 gap-6"
+    }
+  },
+  "component_rules": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-sky-700 shadow-sm font-medium",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-slate-200",
+      "ghost": "hover:bg-slate-100 text-slate-600 hover:text-slate-900"
+    },
+    "inputs": {
+      "style": "h-12 bg-white border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 rounded-lg text-base transition-all"
+    },
+    "cards": {
+      "dashboard": "bg-white border border-slate-100 rounded-xl shadow-card",
+      "feature": "bg-slate-50 border border-transparent hover:bg-white hover:border-sky-100 transition-all duration-300"
+    }
+  },
+  "image_assets": {
+    "hero_main": {
+      "url": "https://images.unsplash.com/photo-1758691461957-13aff0c37c6f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzF8MHwxfHNlYXJjaHwyfHxkb2N0b3IlMjB0YWJsZXQlMjBob3NwaXRhbCUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzczODk5ODY1fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Doctor analyzing patient data on a tablet with x-ray visualization",
+      "placement": "Landing Page Hero Section (Right side or Background Overlay)"
+    },
+    "feature_lab": {
+      "url": "https://images.unsplash.com/photo-1631556760585-2e846196d5a9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwyfHxtZWRpY2FsJTIwbGFib3JhdG9yeSUyMHJlc2VhcmNoJTIwbWljcm9zY29wZXxlbnwwfHx8fDE3NzM4OTk4NjZ8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Medical researcher working with a microscope in a high-tech lab",
+      "placement": "Features Section - Research/Accuracy Card"
+    },
+    "trust_consultation": {
+      "url": "https://images.unsplash.com/photo-1758691461935-202e2ef6b69f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwyfHxtZWRpY2FsJTIwY29uc3VsdGF0aW9uJTIwcGF0aWVudCUyMGRvY3RvcnxlbnwwfHx8fDE3NzM4OTk4Njd8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Doctor having a compassionate consultation with a patient",
+      "placement": "About/Trust Section or Patient History Page"
+    }
+  },
+  "universal_guidelines": [
+    "Do NOT use 'Inter' for headings. Use 'Manrope'.",
+    "Avoid gradients for the main background. Use solid white or very subtle Slate-50.",
+    "Data visualization charts must use the 'Medical' palette: Blue (primary), Teal (secondary), Slate (neutral).",
+    "All interactive elements (buttons, inputs, links) MUST have 'data-testid' attributes.",
+    "Dashboard layout should be dense but legible. Use 'Bento' grid logic.",
+    "Use 'sonner' for all toast notifications.",
+    "Accessibility: Ensure text contrast ratio is at least 4.5:1 on all backgrounds.",
+    "Images: Use border-radius 'rounded-2xl' for all feature images to soften the look."
+  ],
+  "instructions_to_main_agent": [
+    "1. Install 'lucide-react' for icons immediately.",
+    "2. Configure 'tailwind.config.js' to include 'Manrope' and 'Public Sans'.",
+    "3. Set up the 'Dashboard' with a sidebar layout (fixed left, scrollable right).",
+    "4. Implement the 'Disease Prediction' form as a clean, multi-step or well-grouped form to avoid overwhelming the user.",
+    "5. Use 'recharts' or 'shadcn/chart' for the prediction results visualizations.",
+    "6. Create a 'History' page using a clean data table with status badges (High Risk = Red, Low Risk = Green)."
+  ]
+}
