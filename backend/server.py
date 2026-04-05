@@ -27,9 +27,7 @@ mongo_client = AsyncIOMotorClient(MONGO_URL)
 db = mongo_client[DB_NAME]
 
 # --- 3. AI CONFIGURATION ---
-OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "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")
-openai_client = OpenAI(api_key=OPENAI_KEY)
-
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # --- 4. SECURITY CONFIG ---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'medivision-super-secure-key-2026')
