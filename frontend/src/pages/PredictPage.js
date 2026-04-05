@@ -1,275 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Stethoscope, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
+import { Loader2, Activity, ClipboardList } from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import DashboardLayout from '../components/DashboardLayout';
-import { useAuth } from '../context/AuthContext';
-import { toast } from 'sonner';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const PredictPage = () => {
+  const { api, token } = useAuth(); 
   const navigate = useNavigate();
-  const { getAuthHeader } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [diseases, setDiseases] = useState([]);
   const [selectedDisease, setSelectedDisease] = useState('');
   const [patientName, setPatientName] = useState('');
-  const [diseaseFields, setDiseaseFields] = useState([]);
+  const [fields, setFields] = useState([]);
   const [formData, setFormData] = useState({});
-
-  const diseases = [
-    'Heart Disease',
-    'Diabetes',
-    'Kidney Disease',
-    'Liver Disease',
-    'Breast Cancer',
-    'Parkinsons Disease',
-    'Stroke Risk',
-    'Hypertension',
-  ];
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (selectedDisease) {
-      fetchDiseaseFields(selectedDisease);
+    if (token) {
+      api.get('/api/diseases')
+        .then(res => setDiseases(res.data.diseases || []))
+        .catch(() => toast.error("Could not load disease list"));
     }
-  }, [selectedDisease]);
+  }, [api, token]);
 
-  const fetchDiseaseFields = async (disease) => {
-    try {
-      const response = await axios.get(
-        `${API_URL}/api/disease-features/${disease}`,
-        { headers: getAuthHeader() }
-      );
-      setDiseaseFields(response.data.form_fields);
-      // Initialize form data
-      const initialData = {};
-      response.data.form_fields.forEach((field) => {
-        initialData[field.name] = '';
-      });
-      setFormData(initialData);
-    } catch (error) {
-      toast.error('Failed to load disease fields');
+  useEffect(() => {
+    if (selectedDisease && token) {
+      setLoading(true);
+      api.get(`/api/disease-fields/${selectedDisease}`)
+        .then(res => {
+          const fetchedFields = res.data.fields || [];
+          setFields(fetchedFields);
+          const initial = {};
+          fetchedFields.forEach(f => { initial[f.name] = ""; });
+          setFormData(initial);
+        })
+        .catch(() => toast.error("Error loading clinical parameters"))
+        .finally(() => setLoading(false));
     }
-  };
+  }, [selectedDisease, api, token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!selectedDisease) {
-      toast.error('Please select a disease to predict');
-      return;
-    }
-
-    if (!patientName) {
-      toast.error('Please enter patient name');
-      return;
-    }
-
+    if (!selectedDisease || !patientName) return toast.error("Please fill in patient details");
     setLoading(true);
 
     try {
-      // Convert form data to numbers where needed
-      const features = {};
-      Object.keys(formData).forEach((key) => {
-        const value = formData[key];
-        features[key] = parseFloat(value) || 0;
+      const processedFeatures = {};
+      fields.forEach(field => {
+        const val = formData[field.name];
+        processedFeatures[field.name] = field.type === 'number' 
+          ? (val === "" ? 0 : parseFloat(val)) : val;
       });
 
-      const response = await axios.post(
-        `${API_URL}/api/predict`,
-        {
-          disease_name: selectedDisease,
-          patient_name: patientName,
-          features: features,
-        },
-        { headers: getAuthHeader() }
-      );
+      const payload = {
+        disease_name: selectedDisease,
+        patient_name: patientName,
+        features: processedFeatures
+      };
 
-      toast.success('Prediction completed successfully!');
-      navigate('/result', { state: { prediction: response.data } });
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Prediction failed');
+      // FIXED: Use the 'api' instance
+      const res = await api.post('/api/predict', payload);
+      
+      toast.success("Diagnosis Complete!");
+      navigate('/result', { state: { prediction: res.data } });
+      
+    } catch (err) {
+      console.error("Prediction Error:", err);
+      const errorMsg = err.response?.data?.detail || "Server error. Check Python logs.";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFieldChange = (fieldName, value) => {
-    setFormData({
-      ...formData,
-      [fieldName]: value,
-    });
-  };
-
-  const renderFormField = (field, index) => {
-    if (field.type === 'select') {
-      return (
-        <div key={index} className="space-y-2">
-          <Label htmlFor={field.name} className="text-sm font-medium">
-            {field.label}
-          </Label>
-          <Select
-            value={formData[field.name]?.toString() || ''}
-            onValueChange={(value) => handleFieldChange(field.name, value)}
-          >
-            <SelectTrigger
-              className="h-12 bg-white border-slate-200"
-              data-testid={`field-${field.name}`}
-            >
-              <SelectValue placeholder={`Select ${field.label}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options.map((option, idx) => (
-                <SelectItem key={idx} value={option.value.toString()}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      );
-    }
-
-    return (
-      <div key={index} className="space-y-2">
-        <Label htmlFor={field.name} className="text-sm font-medium">
-          {field.label}
-        </Label>
-        <Input
-          id={field.name}
-          type={field.type}
-          step={field.step}
-          min={field.min}
-          max={field.max}
-          placeholder={`Enter ${field.label}`}
-          value={formData[field.name] || ''}
-          onChange={(e) => handleFieldChange(field.name, e.target.value)}
-          className="h-12 bg-white border-slate-200"
-          data-testid={`field-${field.name}`}
-          required={field.required}
-        />
-      </div>
-    );
-  };
-
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto" data-testid="predict-page">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-accent mb-2">
-            Disease Prediction
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Enter patient information to get AI-powered health risk assessment
-          </p>
+      <div className="max-w-5xl mx-auto p-4 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900">New Assessment</h1>
+            <p className="text-slate-500 text-sm">Input patient data for AI-driven risk analysis.</p>
+          </div>
+          <div className="bg-blue-50 p-2 rounded-lg"><Activity className="text-blue-600 h-6 w-6" /></div>
         </div>
 
-        {/* Prediction Form */}
-        <div className="bg-white border border-slate-100 rounded-xl shadow-sm p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Disease Selection */}
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-8">
+          <div className="grid md:grid-cols-2 gap-6 p-6 bg-slate-50/50 rounded-xl border border-slate-100">
             <div className="space-y-2">
-              <Label htmlFor="disease" className="text-sm font-semibold uppercase tracking-wider">
-                Select Disease
-              </Label>
-              <Select value={selectedDisease} onValueChange={setSelectedDisease}>
-                <SelectTrigger
-                  className="h-12 bg-white border-slate-200 focus:border-primary"
-                  data-testid="disease-select"
-                >
-                  <SelectValue placeholder="Choose a disease to predict" />
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Target Medical Model</Label>
+              <Select onValueChange={setSelectedDisease} value={selectedDisease}>
+                <SelectTrigger className="h-12 bg-white border-slate-200">
+                  <SelectValue placeholder="Choose Disease Category..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {diseases.map((disease, index) => (
-                    <SelectItem key={index} value={disease} data-testid={`disease-option-${index}`}>
-                      {disease}
-                    </SelectItem>
-                  ))}
+                  {diseases?.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Patient Full Name</Label>
+              <Input className="h-12 bg-white border-slate-200" placeholder="e.g. John Doe" value={patientName} onChange={e => setPatientName(e.target.value)} required />
+            </div>
+          </div>
 
-            {/* Patient Name */}
-            {selectedDisease && (
-              <>
-                <div className="border-t border-slate-200 pt-6">
-                  <h3 className="text-lg font-semibold text-accent mb-4 flex items-center">
-                    <User className="h-5 w-5 mr-2 text-primary" />
-                    Patient Information
-                  </h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="patient_name" className="text-sm font-medium">
-                      Patient Name
-                    </Label>
-                    <Input
-                      id="patient_name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      className="h-12 bg-white border-slate-200"
-                      data-testid="patient-name-input"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Disease-Specific Fields */}
-                <div className="border-t border-slate-200 pt-6">
-                  <h3 className="text-lg font-semibold text-accent mb-4 flex items-center">
-                    <Stethoscope className="h-5 w-5 mr-2 text-primary" />
-                    Medical Parameters for {selectedDisease}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {diseaseFields.map((field, index) => renderFormField(field, index))}
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="border-t border-slate-200 pt-6">
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full md:w-auto h-14 px-12 text-base font-medium"
-                    disabled={loading}
-                    data-testid="predict-submit-btn"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Stethoscope className="h-5 w-5 mr-2" />
-                        Get Prediction
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {/* Help Text */}
-            {!selectedDisease && (
-              <div className="text-center py-12 text-muted-foreground">
-                Select a disease from the dropdown above to see the specific medical parameters
-                required for prediction.
+          {selectedDisease && fields.length > 0 ? (
+            <div className="pt-4 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center gap-2 mb-6 text-blue-600 font-bold uppercase text-[10px] tracking-[0.2em]">
+                <ClipboardList className="h-4 w-4" /> Required Clinical Features
               </div>
-            )}
-          </form>
-        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+                {fields.map((f, i) => (
+                  <div key={i} className="space-y-2 group">
+                    <Label className="text-[11px] font-bold text-slate-500 group-hover:text-blue-600 transition-colors uppercase">{f.label}</Label>
+                    <Input type="number" step="any" className="h-10 bg-white border-slate-200 group-hover:border-blue-200" placeholder="0.00" value={formData[f.name] || ''} onChange={e => setFormData(prev => ({...prev, [f.name]: e.target.value}))} required />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : !loading && (
+            <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-xl">
+              <p className="text-slate-400 text-sm italic">Select a medical model to load parameters.</p>
+            </div>
+          )}
+
+          <Button type="submit" className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-black rounded-xl transition-all" disabled={loading || !selectedDisease}>
+            {loading ? <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Analyzing...</div> : "Execute AI Diagnosis"}
+          </Button>
+        </form>
       </div>
     </DashboardLayout>
   );

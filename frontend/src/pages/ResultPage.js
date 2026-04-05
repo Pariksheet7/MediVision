@@ -1,212 +1,94 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, Activity, ArrowLeft, History } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import DashboardLayout from '../components/DashboardLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowLeft, AlertTriangle, ShieldCheck, Printer, Stethoscope, Activity, FileText, ChevronRight, Sparkles } from 'lucide-react';
 
 const ResultPage = () => {
-  const location = useLocation();
+  const { state } = useLocation();
   const navigate = useNavigate();
-  const prediction = location.state?.prediction;
+  const result = state?.prediction;
 
-  if (!prediction) {
+  if (!result) {
     return (
       <DashboardLayout>
-        <div className="max-w-2xl mx-auto text-center py-12">
-          <p className="text-lg text-muted-foreground mb-4">No prediction data available</p>
-          <Button onClick={() => navigate('/predict')} data-testid="no-data-predict-btn">
-            Make a Prediction
-          </Button>
+        <div className="flex flex-col items-center justify-center py-32 space-y-4 text-center">
+          <FileText className="h-12 w-12 text-slate-300" />
+          <h2 className="text-xl font-bold">No Assessment Data</h2>
+          <Button onClick={() => navigate('/predict')}>Start Diagnosis</Button>
         </div>
       </DashboardLayout>
     );
   }
 
-  const isHighRisk = prediction.risk_level === 'High Risk';
-  const riskColor = isHighRisk ? 'text-destructive' : 'text-success';
-  const riskBg = isHighRisk ? 'bg-red-50' : 'bg-green-50';
-  const progressColor = isHighRisk ? 'bg-destructive' : 'bg-success';
+  const riskVal = result.risk_percentage || 0;
+  const isHigh = riskVal >= 50;
+  const severityColor = isHigh ? 'text-red-600' : 'text-emerald-600';
+  const severityBg = isHigh ? 'bg-red-500' : 'bg-emerald-500';
+  const severityLightBg = isHigh ? 'bg-red-50' : 'bg-emerald-50';
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto" data-testid="result-page">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/predict')}
-            className="mb-4"
-            data-testid="back-to-predict-btn"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Prediction
+      <div className="max-w-5xl mx-auto space-y-6 p-4 pb-20">
+        <div className="flex justify-between items-center no-print">
+          <Button variant="ghost" onClick={() => navigate('/predict')} className="font-bold">
+            <ArrowLeft className="mr-2 h-4 w-4" /> NEW ANALYSIS
           </Button>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-accent mb-2">
-            Prediction Results
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            AI-powered health risk assessment completed
-          </p>
+          <Button onClick={() => window.print()} variant="outline" className="font-bold">
+            <Printer className="mr-2 h-4 w-4" /> PRINT REPORT
+          </Button>
         </div>
+        
+        <Card className="overflow-hidden border-none shadow-2xl rounded-3xl">
+          <div className={`h-3 ${severityBg}`} />
+          <CardContent className="p-0">
+            <div className="grid lg:grid-cols-5">
+              <div className={`lg:col-span-2 p-10 flex flex-col items-center justify-center border-r border-slate-100 ${severityLightBg}/30`}>
+                <div className={`p-4 rounded-2xl mb-4 ${severityLightBg}`}>
+                  {isHigh ? <AlertTriangle className="h-12 w-12 text-red-500" /> : <ShieldCheck className="h-12 w-12 text-emerald-500" />}
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 text-center">{result.patient_name}</h2>
+                <p className="text-slate-400 font-bold text-xs uppercase mt-1">{result.disease_name} Assessment</p>
+                <div className="mt-8 text-center">
+                   <div className={`text-7xl font-black ${severityColor}`}>{riskVal.toFixed(1)}%</div>
+                   <p className="text-[10px] font-black uppercase text-slate-400 mt-2">Predicted Risk</p>
+                </div>
+              </div>
 
-        {/* Risk Level Card */}
-        <div className={`${riskBg} border-2 ${
-          isHighRisk ? 'border-destructive/20' : 'border-success/20'
-        } rounded-xl p-8 mb-6`}>
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <div className="flex items-center space-x-3 mb-2">
-                {isHighRisk ? (
-                  <AlertTriangle className="h-8 w-8 text-destructive" />
-                ) : (
-                  <CheckCircle className="h-8 w-8 text-success" />
+              <div className="lg:col-span-3 p-10 space-y-8 bg-white">
+                {result.clinical_summary && (
+                  <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 p-5 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-4 w-4 text-blue-600" />
+                      <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-700">AI Interpretation</h4>
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed italic">"{result.clinical_summary}"</p>
+                  </div>
                 )}
-                <h2 className={`text-3xl font-bold font-heading ${riskColor}`}>
-                  {prediction.risk_level}
-                </h2>
-              </div>
-              <p className="text-base text-foreground/80">
-                {isHighRisk
-                  ? 'Elevated risk detected. Please consult a healthcare professional.'
-                  : 'Low risk detected. Continue maintaining healthy habits.'}
-              </p>
-            </div>
-          </div>
 
-          {/* Risk Percentage */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Risk Probability
-              </span>
-              <span className={`text-2xl font-bold font-heading ${riskColor}`}>
-                {prediction.risk_percentage}%
-              </span>
-            </div>
-            <div className="relative h-4 bg-white rounded-full overflow-hidden">
-              <div
-                className={`h-full ${progressColor} transition-all duration-500`}
-                style={{ width: `${prediction.risk_percentage}%` }}
-                data-testid="risk-progress-bar"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Patient Details */}
-        <div className="bg-white border border-slate-100 rounded-xl shadow-sm p-8 mb-6">
-          <h3 className="text-xl font-semibold text-accent mb-6 flex items-center">
-            <Activity className="h-5 w-5 mr-2 text-primary" />
-            Prediction Details
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                Disease
-              </div>
-              <div className="text-lg font-medium text-accent">{prediction.disease_name}</div>
-            </div>
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                Patient Name
-              </div>
-              <div className="text-lg font-medium text-accent">{prediction.patient_name}</div>
-            </div>
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                Prediction ID
-              </div>
-              <div className="text-sm font-mono text-accent">{prediction.id}</div>
-            </div>
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                Date
-              </div>
-              <div className="text-sm text-accent">
-                {new Date(prediction.created_at).toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recommendations */}
-        <div className="bg-white border border-slate-100 rounded-xl shadow-sm p-8 mb-6">
-          <h3 className="text-xl font-semibold text-accent mb-4">Recommendations</h3>
-          <div className="space-y-3">
-            {isHighRisk ? (
-              <>
-                <div className="flex items-start space-x-3">
-                  <div className="bg-destructive/10 p-2 rounded-lg mt-0.5">
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Stethoscope className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-black text-sm uppercase tracking-widest text-slate-800">Action Plan</h3>
                   </div>
-                  <p className="text-base text-foreground/80 leading-7">
-                    Consult with a healthcare professional immediately for proper diagnosis and treatment.
-                  </p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="bg-primary/10 p-2 rounded-lg mt-0.5">
-                    <Activity className="h-4 w-4 text-primary" />
+                  <div className="space-y-2">
+                    {result.recommendations?.map((r, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className={`h-2 w-2 rounded-full ${severityBg}`} />
+                        <p className="text-slate-700 text-sm font-bold">{r}</p>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-base text-foreground/80 leading-7">
-                    Schedule regular check-ups and follow your doctor's advice closely.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-start space-x-3">
-                  <div className="bg-success/10 p-2 rounded-lg mt-0.5">
-                    <CheckCircle className="h-4 w-4 text-success" />
-                  </div>
-                  <p className="text-base text-foreground/80 leading-7">
-                    Continue maintaining a healthy lifestyle with regular exercise and balanced diet.
-                  </p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="bg-primary/10 p-2 rounded-lg mt-0.5">
-                    <Activity className="h-4 w-4 text-primary" />
-                  </div>
-                  <p className="text-base text-foreground/80 leading-7">
-                    Schedule routine health check-ups to monitor your health status.
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+                </section>
 
-        {/* Disclaimer */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
-          <p className="text-sm text-muted-foreground">
-            <strong className="font-semibold">Medical Disclaimer:</strong> This prediction is generated by AI 
-            and should not be considered as a medical diagnosis. Always consult with qualified healthcare 
-            professionals for accurate diagnosis and treatment recommendations.
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button
-            onClick={() => navigate('/predict')}
-            data-testid="new-prediction-btn"
-            size="lg"
-            className="flex-1 h-12"
-          >
-            <Activity className="h-5 w-5 mr-2" />
-            New Prediction
-          </Button>
-          <Button
-            onClick={() => navigate('/history')}
-            data-testid="view-history-btn"
-            variant="outline"
-            size="lg"
-            className="flex-1 h-12 border-2"
-          >
-            <History className="h-5 w-5 mr-2" />
-            View History
-          </Button>
-        </div>
+                <Button onClick={() => navigate('/history')} className="w-full bg-slate-900 text-white font-bold h-12 rounded-xl">
+                  View Full History <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

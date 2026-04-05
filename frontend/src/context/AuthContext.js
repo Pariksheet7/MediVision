@@ -1,78 +1,111 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import axios from "axios";
 
 const AuthContext = createContext(null);
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:8000'
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
 
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  }, []);
+
+  // --- NEW: Function to sync profile changes without re-logging in ---
+  const updateUser = useCallback((updatedData) => {
+    setUser(prev => {
+      const newUser = { ...prev, ...updatedData };
+      localStorage.setItem("user", JSON.stringify(newUser));
+      return newUser;
+    });
+  }, []);
+
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token");
+    
+    if (storedUser && storedToken) {
+      try {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
+      } catch (e) {
+        console.error("Failed to parse user data", e);
+        logout(); 
+      }
     }
     setLoading(false);
+  }, [logout]);
+
+  useEffect(() => {
+    const requestInterceptor = api.interceptors.request.use((config) => {
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
+    return () => api.interceptors.request.eject(requestInterceptor);
   }, [token]);
 
-  const register = async (email, password, full_name) => {
+  const handleAuth = useCallback((accessToken, userData) => {
+    setToken(accessToken);
+    setUser(userData);
+    localStorage.setItem("token", accessToken);
+    localStorage.setItem("user", JSON.stringify(userData));
+  }, []);
+
+  const login = useCallback(async (email, password) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, {
-        email,
-        password,
-        full_name,
-      });
-      const { access_token, user } = response.data;
-      setToken(access_token);
-      setUser(user);
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('user', JSON.stringify(user));
+      const res = await api.post("/api/auth/login", { email, password });
+      handleAuth(res.data.access_token, res.data.user);
       return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Registration failed' 
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.detail || "Login failed",
       };
     }
-  };
+  }, [handleAuth]);
 
-  const login = async (email, password) => {
+  const register = useCallback(async (email, password, full_name) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
-        email,
-        password,
-      });
-      const { access_token, user } = response.data;
-      setToken(access_token);
-      setUser(user);
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('user', JSON.stringify(user));
+      const res = await api.post("/api/auth/register", { email, password, full_name });
+      handleAuth(res.data.access_token, res.data.user);
       return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Login failed' 
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.detail || "Registration failed",
       };
     }
-  };
+  }, [handleAuth]);
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  };
-
-  const getAuthHeader = () => {
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  const value = useMemo(() => ({
+    user,
+    token,
+    loading,
+    login,
+    register,
+    logout,
+    updateUser, // Exported to be used in Profile.js
+    api
+  }), [user, token, loading, login, register, logout, updateUser]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, register, login, logout, getAuthHeader }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading ? children : (
+        <div className="flex h-screen w-screen items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };
@@ -80,7 +113,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
