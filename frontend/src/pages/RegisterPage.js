@@ -145,7 +145,7 @@ const RegisterPage = () => {
                   Verifying...
                 </>
               ) : (
-                'Create Doctor Account'
+                'Create Account'
               )}
             </Button>
           </form>

@@ -9,10 +9,15 @@ import {
   Activity,
   UserCircle
 } from 'lucide-react';
+// Import the custom hook from your AuthContext
+import { useAuth } from '../context/AuthContext'; 
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Destructure the user data and logout function from AuthContext
+  const { user, logout } = useAuth();
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -22,7 +27,7 @@ const Sidebar = () => {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout(); // This now uses the function from AuthContext which clears localStorage for you
     navigate('/login');
   };
 
@@ -74,8 +79,15 @@ const Sidebar = () => {
             <UserCircle size={24} />
           </div>
           <div className="overflow-hidden">
-            <p className="text-white text-xs font-black truncate uppercase tracking-wider">Dr. Alexander</p>
-            <p className="text-[10px] text-slate-500 font-bold truncate">Clinical Lead</p>
+            {/* We use user?.full_name or user?.name. 
+               The '?' ensures the app doesn't crash if the user isn't loaded yet.
+            */}
+            <p className="text-white text-xs font-black truncate uppercase tracking-wider">
+              {user?.full_name || user?.name || 'User'}
+            </p>
+            <p className="text-[10px] text-slate-500 font-bold truncate">
+              {user?.role || 'Authorized Access'}
+            </p>
           </div>
           <button 
             onClick={handleLogout}

@@ -21,6 +21,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
+      // The login function in AuthContext should handle saving 'token' and 'user' to localStorage
       const result = await login(formData.email, formData.password);
       
       if (result.success) {
@@ -38,7 +39,6 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 py-12 selection:bg-blue-100">
-      {/* Back to Home Link */}
       <Link 
         to="/" 
         className="mb-8 flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors"
@@ -48,20 +48,18 @@ const LoginPage = () => {
       </Link>
 
       <div className="w-full max-w-md">
-        {/* Brand/Logo Section */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center bg-blue-600 p-2 rounded-xl mb-4 shadow-lg shadow-blue-200">
             <Activity className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
-            Welcome back
+            Sign In
           </h1>
           <p className="text-slate-500">
-            Access your AI health dashboard
+            Access your MediVision dashboard
           </p>
         </div>
 
-        {/* Form Card */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 p-8 sm:p-10">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -77,7 +75,6 @@ const LoginPage = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="pl-10 h-12 bg-white border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                  data-testid="login-email-input"
                   required
                 />
               </div>
@@ -101,7 +98,6 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="pl-10 h-12 bg-white border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                  data-testid="login-password-input"
                   required
                 />
               </div>
@@ -111,12 +107,11 @@ const LoginPage = () => {
               type="submit"
               className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-100 transition-all active:scale-[0.98]"
               disabled={loading}
-              data-testid="login-submit-btn"
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Verifying Account...
+                  Verifying...
                 </>
               ) : (
                 'Sign In'
@@ -124,26 +119,18 @@ const LoginPage = () => {
             </Button>
           </form>
 
-          {/* Registration Footer */}
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-sm text-slate-500">
-              New to MediVision?{' '}
+              New here?{' '}
               <Link
                 to="/register"
                 className="text-blue-600 font-bold hover:text-blue-700 transition-colors"
-                data-testid="login-register-link"
               >
                 Create an account
               </Link>
             </p>
           </div>
         </div>
-
-        {/* Trust Badge */}
-        <p className="mt-8 text-center text-xs text-slate-400 flex items-center justify-center gap-1">
-          <Lock className="h-3 w-3" />
-          Secure, HIPAA-compliant login
-        </p>
       </div>
     </div>
   );

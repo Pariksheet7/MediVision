@@ -67,7 +67,7 @@ const DashboardLayout = ({ children }) => {
             >
               <div className="text-right">
                 <p className="text-sm font-bold text-slate-900 leading-none group-hover:text-blue-600">
-                  {user?.full_name || 'Medical Officer'}
+                  {user?.full_name || "User"}
                 </p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">
                   Authorized Access

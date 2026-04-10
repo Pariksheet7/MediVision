@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
 
+  // 🔥 LOGOUT
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
@@ -19,49 +20,74 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   }, []);
 
-  // --- NEW: Function to sync profile changes without re-logging in ---
+  // 🔥 CLEAR HISTORY
+  const clearHistory = useCallback(async () => {
+    try {
+      await api.delete("/api/clear-history");
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || "Failed to clear history",
+      };
+    }
+  }, []);
+
+  // 🔥 UPDATE USER
   const updateUser = useCallback((updatedData) => {
     setUser(prev => {
+      if (!prev) return updatedData;
       const newUser = { ...prev, ...updatedData };
       localStorage.setItem("user", JSON.stringify(newUser));
       return newUser;
     });
   }, []);
 
+  // 🔥 LOAD FROM LOCAL STORAGE
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
-    
-    if (storedUser && storedToken) {
+
+    if (storedUser && storedToken && storedUser !== "undefined") {
       try {
         setUser(JSON.parse(storedUser));
         setToken(storedToken);
       } catch (e) {
-        console.error("Failed to parse user data", e);
-        logout(); 
+        console.error("User parse error:", e);
+        logout();
       }
     }
+
     setLoading(false);
   }, [logout]);
 
+  // 🔥 AUTO TOKEN HEADER
   useEffect(() => {
-    const requestInterceptor = api.interceptors.request.use((config) => {
+    const interceptor = api.interceptors.request.use((config) => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
     });
 
-    return () => api.interceptors.request.eject(requestInterceptor);
+    return () => api.interceptors.request.eject(interceptor);
   }, [token]);
 
+  // 🔥 HANDLE AUTH
   const handleAuth = useCallback((accessToken, userData) => {
+    const normalizedUser = {
+      ...userData,
+      name: userData.name || userData.full_name || "User"
+    };
+
     setToken(accessToken);
-    setUser(userData);
+    setUser(normalizedUser);
+
     localStorage.setItem("token", accessToken);
-    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("user", JSON.stringify(normalizedUser));
   }, []);
 
+  // 🔥 LOGIN
   const login = useCallback(async (email, password) => {
     try {
       const res = await api.post("/api/auth/login", { email, password });
@@ -75,9 +101,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [handleAuth]);
 
+  // 🔥 REGISTER
   const register = useCallback(async (email, password, full_name) => {
     try {
-      const res = await api.post("/api/auth/register", { email, password, full_name });
+      const res = await api.post("/api/auth/register", {
+        email,
+        password,
+        full_name
+      });
+
       handleAuth(res.data.access_token, res.data.user);
       return { success: true };
     } catch (err) {
@@ -88,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [handleAuth]);
 
+  // 🔥 FINAL VALUE (IMPORTANT)
   const value = useMemo(() => ({
     user,
     token,
@@ -95,17 +128,14 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateUser, // Exported to be used in Profile.js
+    updateUser,
+    clearHistory,
     api
-  }), [user, token, loading, login, register, logout, updateUser]);
+  }), [user, token, loading, login, register, logout, updateUser, clearHistory]);
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading ? children : (
-        <div className="flex h-screen w-screen items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      )}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
@@ -113,7 +143,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };
