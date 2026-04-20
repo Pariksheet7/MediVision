@@ -1,3 +1,4 @@
+// SAME IMPORTS (no change)
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
@@ -9,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger 
 } from '@/components/ui/dialog';
-import { History, Search, Loader2, Printer } from 'lucide-react';
+import { History, Search, Loader2, Printer, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -42,8 +43,7 @@ const HistoryPage = () => {
 
   // 🔥 CLEAR HISTORY
   const handleClearHistory = async () => {
-    const confirmDelete = window.confirm("Are you sure you want to clear all history?");
-    if (!confirmDelete) return;
+    if (!window.confirm("Are you sure you want to clear all history?")) return;
 
     const result = await clearHistory();
 
@@ -52,6 +52,23 @@ const HistoryPage = () => {
       toast.success("History cleared successfully");
     } else {
       toast.error(result.error);
+    }
+  };
+
+  // 🔥 DELETE SINGLE RECORD
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this record?")) return;
+
+    try {
+      await api.delete(`/api/delete-history/${id}`);
+
+      // UI update
+      setHistory(prev => prev.filter(item => item._id !== id));
+
+      toast.success("Record deleted");
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Delete failed");
     }
   };
 
@@ -76,7 +93,6 @@ const HistoryPage = () => {
             </p>
           </div>
 
-          {/* ACTIONS */}
           <div className="flex gap-3 w-full md:w-auto">
 
             <Button 
@@ -119,7 +135,7 @@ const HistoryPage = () => {
                     <TableHead>Disease</TableHead>
                     <TableHead>Risk</TableHead>
                     <TableHead>Confidence</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -128,11 +144,9 @@ const HistoryPage = () => {
                     const dateObj = new Date(record.created_at);
 
                     return (
-                      <TableRow key={record.id}>
-                        <TableCell>
-                          {dateObj.toLocaleDateString()}
-                        </TableCell>
+                      <TableRow key={record._id}> {/* ✅ FIXED HERE */}
 
+                        <TableCell>{dateObj.toLocaleDateString()}</TableCell>
                         <TableCell>{record.patient_name}</TableCell>
 
                         <TableCell>
@@ -153,7 +167,9 @@ const HistoryPage = () => {
                           {(record.risk_percentage || 0).toFixed(1)}%
                         </TableCell>
 
-                        <TableCell className="text-right">
+                        <TableCell className="text-right flex gap-2 justify-end">
+
+                          {/* VIEW BUTTON (UNCHANGED) */}
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button size="sm">VIEW</Button>
@@ -174,6 +190,16 @@ const HistoryPage = () => {
                               </Button>
                             </DialogContent>
                           </Dialog>
+
+                          {/* 🔥 DELETE BUTTON */}
+                          <Button 
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(record._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+
                         </TableCell>
                       </TableRow>
                     );

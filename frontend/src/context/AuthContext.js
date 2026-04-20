@@ -43,19 +43,30 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // 🔥 LOAD FROM LOCAL STORAGE
+  // 🔥 LOAD FROM LOCAL STORAGE (IMPROVED)
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
+    try {
+      const storedUser = localStorage.getItem("user");
+      const storedToken = localStorage.getItem("token");
 
-    if (storedUser && storedToken && storedUser !== "undefined") {
-      try {
-        setUser(JSON.parse(storedUser));
+      if (storedUser && storedToken && storedUser !== "undefined") {
+        const parsedUser = JSON.parse(storedUser);
+
+        // 🔥 normalize again (fix old data issue)
+        const normalizedUser = {
+          ...parsedUser,
+          name: parsedUser.name || parsedUser.full_name || "User"
+        };
+
+        setUser(normalizedUser);
         setToken(storedToken);
-      } catch (e) {
-        console.error("User parse error:", e);
-        logout();
+
+        // 🔥 rewrite fixed user back to storage
+        localStorage.setItem("user", JSON.stringify(normalizedUser));
       }
+    } catch (e) {
+      console.error("User parse error:", e);
+      logout();
     }
 
     setLoading(false);
@@ -73,12 +84,15 @@ export const AuthProvider = ({ children }) => {
     return () => api.interceptors.request.eject(interceptor);
   }, [token]);
 
-  // 🔥 HANDLE AUTH
+  // 🔥 HANDLE AUTH (FIXED HARD)
   const handleAuth = useCallback((accessToken, userData) => {
     const normalizedUser = {
       ...userData,
-      name: userData.name || userData.full_name || "User"
+      name: userData?.name || userData?.full_name || "User"
     };
+
+    // 🔥 FORCE UPDATE (IMPORTANT)
+    localStorage.removeItem("user");
 
     setToken(accessToken);
     setUser(normalizedUser);
@@ -91,12 +105,18 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     try {
       const res = await api.post("/api/auth/login", { email, password });
+
+      // 🔥 ensure correct data
+      if (!res.data?.user) {
+        throw new Error("User data missing");
+      }
+
       handleAuth(res.data.access_token, res.data.user);
       return { success: true };
     } catch (err) {
       return {
         success: false,
-        error: err.response?.data?.detail || "Login failed",
+        error: err.response?.data?.detail || err.message || "Login failed",
       };
     }
   }, [handleAuth]);
@@ -119,8 +139,26 @@ export const AuthProvider = ({ children }) => {
       };
     }
   }, [handleAuth]);
-
-  // 🔥 FINAL VALUE (IMPORTANT)
+  const updateProfile = useCallback(async (email, full_name) => {
+    try {
+      const res = await api.put("/api/auth/update-profile", {
+        email,
+        full_name
+      });
+  
+      // 🔥 UI instantly update
+      updateUser({ name: full_name });
+  
+      return { success: true };
+  
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.detail || "Update failed"
+      };
+    }
+  }, [updateUser]);
+  // 🔥 FINAL VALUE
   const value = useMemo(() => ({
     user,
     token,
@@ -129,10 +167,11 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    updateProfile,   // 🔥 ADD THIS
     clearHistory,
     api
-  }), [user, token, loading, login, register, logout, updateUser, clearHistory]);
-
+  }), [user, token, loading, login, register, logout, updateUser, updateProfile, clearHistory]);
+  
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}

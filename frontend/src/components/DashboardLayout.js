@@ -9,12 +9,10 @@ import {
   Menu, 
   X, 
   UserCircle,
-  Settings // Added Settings icon
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../context/AuthContext';
-
-// IMPORTANT: Ensure these files exist in your components folder!
 import ChatAssistant from './ChatAssistant'; 
 
 const DashboardLayout = ({ children }) => {
@@ -28,7 +26,6 @@ const DashboardLayout = ({ children }) => {
     navigate('/login');
   };
 
-  // UPDATED: Added Profile to menuItems for global access
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Stethoscope, label: 'Predict Disease', path: '/predict' },
@@ -38,9 +35,11 @@ const DashboardLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* --- TOP NAVIGATION BAR --- */}
+      
+      {/* TOP NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 shadow-sm">
         <div className="flex items-center justify-between h-16 px-4 md:px-6">
+          
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -49,7 +48,10 @@ const DashboardLayout = ({ children }) => {
               {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
             
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
+            <div 
+              className="flex items-center space-x-2 cursor-pointer" 
+              onClick={() => navigate('/dashboard')}
+            >
               <div className="bg-blue-600 p-1.5 rounded-lg">
                 <Activity className="h-6 w-6 text-white" />
               </div>
@@ -59,20 +61,24 @@ const DashboardLayout = ({ children }) => {
             </div>
           </div>
 
+          {/* USER SECTION */}
           <div className="flex items-center space-x-4">
-            {/* UPDATED: Wrapped User Info in a Link to make it clickable */}
             <Link 
               to="/profile" 
               className="hidden md:flex items-center space-x-3 pr-4 border-r border-slate-200 group hover:opacity-80 transition-all"
             >
               <div className="text-right">
+                
+                {/* 🔥 FIXED HERE */}
                 <p className="text-sm font-bold text-slate-900 leading-none group-hover:text-blue-600">
-                  {user?.full_name || "User"}
+                  {user?.name || user?.full_name || "User"}
                 </p>
+
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">
                   Authorized Access
                 </p>
               </div>
+
               <UserCircle className="h-8 w-8 text-slate-300 group-hover:text-blue-600" />
             </Link>
             
@@ -89,7 +95,7 @@ const DashboardLayout = ({ children }) => {
         </div>
       </nav>
 
-      {/* --- SIDEBAR NAVIGATION --- */}
+      {/* SIDEBAR */}
       <aside
         className={`fixed top-16 left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
@@ -99,6 +105,7 @@ const DashboardLayout = ({ children }) => {
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+
             return (
               <Link
                 key={index}
@@ -118,7 +125,7 @@ const DashboardLayout = ({ children }) => {
         </nav>
       </aside>
 
-      {/* --- MAIN CONTENT AREA --- */}
+      {/* MAIN CONTENT */}
       <main className="pt-16 lg:pl-64 min-h-screen">
         <div className="p-6 md:p-8 animate-in fade-in duration-500">
           {children}

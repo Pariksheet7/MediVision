@@ -6,15 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Mail, Lock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import axios from 'axios';
 
 const Profile = () => {
-  // Extracting 'updateUser' to sync global state instantly
-  const { user, updateUser } = useAuth();
+  // 🔥 FIX: use updateProfile instead of axios
+  const { user, updateProfile } = useAuth();
+
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
-    full_name: user?.full_name || '',
+    full_name: user?.name || '',
     email: user?.email || '',
     current_password: '',
     new_password: ''
@@ -23,19 +23,16 @@ const Profile = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const response = await axios.put(`http://localhost:8000/api/user/profile/${user.id}`, formData);
-      
-      // SUCCESS: Sync the new data with AuthContext and LocalStorage
-      // This makes the name change in the Header and Sidebar immediately
-      updateUser({
-        full_name: formData.full_name,
-        email: formData.email
-      });
+      const res = await updateProfile(formData.email, formData.full_name);
+
+      if (!res.success) {
+        throw new Error(res.error);
+      }
 
       toast.success("Clinical profile updated!");
-      
-      // Clear password fields after successful update for security
+
       setFormData(prev => ({
         ...prev,
         current_password: '',
@@ -43,7 +40,7 @@ const Profile = () => {
       }));
 
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Update failed");
+      toast.error(error.message || "Update failed");
     } finally {
       setLoading(false);
     }
@@ -68,9 +65,12 @@ const Profile = () => {
               <ShieldCheck className="text-blue-400" /> Account Security
             </CardTitle>
           </CardHeader>
+
           <CardContent className="p-8">
             <form onSubmit={handleUpdate} className="space-y-6">
+
               <div className="grid gap-6">
+
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase text-slate-400">Full Name</label>
                   <div className="relative">
@@ -101,6 +101,7 @@ const Profile = () => {
                 <hr className="my-4 border-slate-100" />
 
                 <div className="grid md:grid-cols-2 gap-4">
+
                   <div className="space-y-2">
                     <label className="text-xs font-black uppercase text-slate-400">Current Password</label>
                     <div className="relative">
@@ -115,6 +116,7 @@ const Profile = () => {
                       />
                     </div>
                   </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-black uppercase text-slate-400">New Password</label>
                     <div className="relative">
@@ -128,16 +130,19 @@ const Profile = () => {
                       />
                     </div>
                   </div>
+
                 </div>
+
               </div>
 
               <Button 
                 type="submit" 
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-6 rounded-2xl shadow-lg transition-all"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-6 rounded-2xl shadow-lg"
               >
                 {loading ? "SAVING..." : "UPDATE PROFILE"}
               </Button>
+
             </form>
           </CardContent>
         </Card>

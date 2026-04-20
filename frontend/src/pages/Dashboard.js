@@ -15,6 +15,21 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 
+// 🔥 CHART IMPORTS
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
+
 const Dashboard = () => {
   const { api, token, clearHistory } = useAuth();
   const navigate = useNavigate();
@@ -43,7 +58,7 @@ const Dashboard = () => {
         total: data.length,
         highRisk: high,
         lowRisk: data.length - high,
-        recent: data.slice(0, 3)
+        recent: data.slice(0, 5) // 🔥 line chart માટે થોડું વધુ data
       });
 
     } catch (err) {
@@ -58,25 +73,18 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [token]);
 
-  // 🔥 CLEAR HISTORY
-  const handleClearHistory = async () => {
-    const confirmDelete = window.confirm("Are you sure you want to clear all history?");
-    if (!confirmDelete) return;
+  // 🔥 DATA FOR CHARTS
+  const pieData = [
+    { name: "High Risk", value: stats.highRisk },
+    { name: "Low Risk", value: stats.lowRisk },
+  ];
 
-    const result = await clearHistory();
+  const COLORS = ["#ef4444", "#10b981"];
 
-    if (result.success) {
-      setStats({
-        total: 0,
-        highRisk: 0,
-        lowRisk: 0,
-        recent: []
-      });
-      toast.success("History cleared successfully");
-    } else {
-      toast.error(result.error);
-    }
-  };
+  const lineData = stats.recent.map(item => ({
+    name: item.patient_name,
+    risk: item.risk_percentage || 0
+  }));
 
   const statCards = [
     { title: "Total Assessments", value: stats.total, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
@@ -100,21 +108,12 @@ const Dashboard = () => {
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <Button 
-              onClick={handleClearHistory}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl px-4 h-12"
-            >
-              Clear History
-            </Button>
-
-            <Button 
-              onClick={() => navigate('/predict')}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6 h-12 shadow-lg shadow-blue-200"
-            >
-              + NEW DIAGNOSIS
-            </Button>
-          </div>
+          <Button 
+            onClick={() => navigate('/predict')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6 h-12 shadow-lg shadow-blue-200"
+          >
+            + NEW DIAGNOSIS
+          </Button>
         </div>
 
         {/* STATS */}
@@ -129,11 +128,7 @@ const Dashboard = () => {
                     </p>
 
                     <h3 className="text-3xl font-black">
-                      {loading ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        stat.value
-                      )}
+                      {loading ? <Loader2 className="animate-spin" /> : stat.value}
                     </h3>
                   </div>
 
@@ -145,6 +140,52 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
+
+        {/* 🔥 PIE CHART */}
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardHeader>
+            <CardTitle className="text-xl font-black">Risk Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-80">
+            {loading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pieData} dataKey="value" innerRadius={70} outerRadius={100}>
+                    {pieData.map((entry, index) => (
+                      <Cell key={index} fill={COLORS[index]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 🔥 LINE CHART */}
+        <Card className="border-none shadow-sm rounded-3xl">
+          <CardHeader>
+            <CardTitle className="text-xl font-black">Risk Trend</CardTitle>
+          </CardHeader>
+          <CardContent className="h-80">
+            {loading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="risk" stroke="#2563eb" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
 
         {/* RECENT ACTIVITY */}
         <Card className="border-none shadow-sm rounded-3xl">
@@ -164,7 +205,7 @@ const Dashboard = () => {
             ) : stats.recent.length > 0 ? (
               stats.recent.map(item => (
                 <div
-                  key={item.id}
+                  key={item._id}
                   className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl"
                 >
                   <div>
